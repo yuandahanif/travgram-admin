@@ -1,33 +1,68 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
+import {
+  FIRESTORE_ENTITY,
+  useCollection,
+  useFQuery,
+} from "./utils/useFirestore";
+
+import { f_user_upload } from "../types/firestore";
+import { doc, getFirestore, setDoc } from "firebase/firestore";
+import app from "./configs/firebase";
+
+export const db = getFirestore(app);
 
 function App() {
-  const [count, setCount] = useState(0)
+  const useruploads = useFQuery<f_user_upload>(
+    FIRESTORE_ENTITY["user-upload"].key,
+    [],
+    { fieldPath: "waktu_unggah", directionStr: "desc" }
+  );
+
+  const onAction = (id: string, accept: boolean, rest: object) => {
+    setDoc(doc(db, FIRESTORE_ENTITY["user-upload"].key, id), {
+      ...rest,
+      is_accepted: accept,
+    })
+      .then(() => {
+        alert("berhasil");
+      })
+      .catch((error) => {
+        alert("gagal");
+        console.log(error);
+      });
+  };
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    <div className="bg-slate-400 w-full py-10 flex flex-col items-center justify-center gap-4">
+      {useruploads?.docs.map((u) => (
+        <div className="w-fit relative" key={u.data().file_id}>
+          <img src={u.data().file_url} loading="lazy" className="w-96 h-auto" />
+
+          <div className="text-center bg-white p-2">
+            {u.data().is_accepted ? "Sudah Disetujui" : "menunggu persetujuan"}
+          </div>
+
+          <div className="bg-white p-2 flex justify-evenly">
+            {!u.data().is_accepted && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onAction(u.id, true, u.data())}
+                >
+                  Terima
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onAction(u.id, false, u.data())}
+                >
+                  Tolak
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
