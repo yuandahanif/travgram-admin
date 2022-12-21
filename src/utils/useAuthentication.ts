@@ -7,7 +7,8 @@ import {
   getDoc,
   getFirestore,
 } from "firebase/firestore";
-import app from "@config/firebase";
+import app from "../configs/firebase";
+import { f_pengguna } from "../../types/firestore";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
